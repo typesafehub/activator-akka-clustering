@@ -1,0 +1,185 @@
+<html>
+<head>
+<title>Akka Cluster - Activator Template</title>
+</head>
+<body>
+	<div>
+		<h2>Run the Application</h2>
+
+		<p>
+			This tutorial will demonstrate a chat room application. Chat users
+			communicate with <a
+				href="http://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern"
+				target="_blank">publish-subscribe</a> to other users somewhere in
+			the cluster.
+		</p>
+
+		<p>
+			Open the <a href="#run" class="shortcut">Run</a> tab. On the
+			left-hand side we can see the console output, which is logging output
+			from nodes joining the cluster and the fictive chat users publishing
+			random Scott Adams quotes to the chat room as illustrated with the
+			<code>&gt;&gt;&gt;&gt;</code> markers. Other chat users in the room
+			receive those messages as illustrated by the <code>&lt;&lt;</code>
+			markers.
+		</p>
+
+	</div>
+	<div>
+		<h2>Explore the Code - Startup</h2>
+
+		<p>
+			Let's look at the <a href="#code/app/chat/Main.scala"
+				class="shortcut">app/chat/Main.scala</a> file.
+		</p>
+
+		<p>
+			The application starts in the <code>main</code> method. Normally you
+			would run cluster nodes in separate JVMs, typically on different physical
+			machines. Here we simulate that by starting 3 separate actor systems in
+			the same JVM. The actor systems	use remoting to communicate with each other,
+			so the code would be the same for a real distributed application.
+		</p>
+
+		<p>
+			The configuration of the actor systems is located in <a
+				href="#code/conf/application.conf" class="shortcut">conf/application.conf</a>.
+			The
+			<code>ClusterActorRefProvider</code>
+			is the only mandatory configuration to enable Akka clustering.
+		</p>
+		<p>
+			<code>port=0</code>
+			means that the remoting of each actor system will listen on a random
+			available port. This is important when running several actor systems
+			on the same host, since they cannot bind to the same port.
+		</p>
+
+		<p>A few chat user actors are created in each actor system.</p>
+
+		<p>To form a cluster the nodes must join some other node in the
+			cluster. The first node joins itself, the other 2 nodes join the
+			first node.</p>
+
+		<p>
+			Note that there is a delay between the startup of each actor system
+			and that explains why the first messages are not delivered to Miguel
+			and Tyler. An Akka cluster is elastic in its nature. Nodes may join
+			and exit over time and that is discovered by other members of the
+			cluster. Go through the log output in the <a href="#run"
+				class="shortcut">Run</a> tab again and make sure you see that the 3
+			nodes become members. Look for "Member is Up". If the log has grown too
+			much you can restart the app.
+		</p>
+	</div>
+	<div>
+		<h2>Explore the Code - Chat Client Actor</h2>
+
+		<p>
+			Let's look at the <a href="#code/app/chat/RandomUser.scala"
+				class="shortcut">app/chat/RandomUser.scala</a> file.
+		</p>
+
+
+		<p>
+			The <code>RandomUser</code> simulates a chat user. It schedules a
+			<code>Tick</code> message to itself with a random interval. For each tick
+			it picks a Scott Adams quote and publishes it to the chat room via the
+			<code>ChatClient</code>, which is a child actor to <code>RandomUser</code>.
+		</p>
+
+
+
+		<p>
+			Open the <a href="#code/app/chat/ChatClient.scala" class="shortcut">app/chat/ChatClient.scala</a>
+			file.
+		</p>
+
+		<p>
+			The	<code>ChatClient</code> receives <code>Publish</code> messages from the
+			<code>RandomUser</code>	and sends those to the chat room topic via the
+			<code>DistributedPubSubMediator</code>. It subscribes to the same topic to
+			receive messages from itself and other chat users. Note that the chat users
+			are completely decoupled from each other and only know about the publish-subscribe
+			topic that is managed by the mediator. The sender of the message is still the
+			original sender, which makes it possible to reply directly to that actor.
+		</p>
+
+		<p>
+			<a href="http://doc.akka.io/docs/akka/2.2.0-RC1/contrib/distributed-pub-sub.html"
+			target="_blank"><code>DistributedPubSubMediator</code></a> facilitates this
+			publish-subscribe communication pattern. It is built on top of Akka cluster and packaged in the
+			<a href="http://doc.akka.io/docs/akka/2.2.0-RC1/contrib/index.html" target="_blank">Akka Contrib Module</a>.
+			The mediator actor keeps track of registered subscribers, but there is no central
+			broker. One mediator actor is running on each node, and it replicates the actor
+			references to peer mediators at other cluster members. This distributed registry
+			is eventually consistent, i.e. changes are not immediately visible at other nodes,
+			but typically they will be fully replicated to all other nodes after a few seconds.
+		</p>
+
+	</div>
+	<div>
+		<h2>Cluster Membership</h2>
+
+		<p>
+			Discovery of new nodes in the cluster, as well as detection of
+			unreachable and removed nodes, is important to be able to build
+			cluster aware features, such as the <code>DistributedPubSubMediator</code>.
+			The API for cluster membership is event based.
+		</p>
+
+		<p>
+			The <a href="#code/app/chat/MemberListener.scala" class="shortcut">app/chat/MemberListener.scala</a>
+			illustrates how to subscribe to such cluster membership events and
+			keep track of addresses of the current members in the cluster.
+		</p>
+
+		<p>
+			A snapshot of the full state, <code>CurrentClusterState</code>, is sent to the subscriber as
+			the first event. Here we are only interested in members with status <code>Up</code> and grab the
+			<code>Address</code> of those members. When there are changes to the members of the cluster
+			other events are sent to the subscriber. <code>MemberUp</code> is received when
+			a new member is added to the cluster. <code>MemberRemoved</code> is received when a member
+			is removed from the cluster due to graceful exit or failure.
+		</p>
+
+		<p>
+			Using the <code>Address</code> information you can send messages to actors at those nodes.
+		</p>
+		<pre>
+			<code>
+  import akka.actor.RootActorPath
+  val service = context.actorSelection(RootActorPath(member.address) /
+    "user" / "backendService")
+  service ! Request("..")
+</code>
+		</pre>
+	</div>
+	<div>
+		<h2>Next Steps</h2>
+
+		<p>
+			With the presented <a
+				href="http://doc.akka.io/docs/akka/2.2.0-RC1/contrib/distributed-pub-sub.html"
+				target="_blank">publish-subscribe feature</a> and brief understanding of <a
+				href="http://doc.akka.io/docs/akka/2.2.0-RC1/scala/cluster-usage.html#Subscribe_to_Cluster_Events"
+				target="_blank">cluster membership</a> you can develop applications
+			that scale out. Of course there are more things in Akka cluster to
+			take advantage of, such as <a
+				href="http://doc.akka.io/docs/akka/2.2.0-RC1/scala/cluster-usage.html#Cluster_Aware_Routers"
+				target="_blank">Cluster Aware Routers</a> and the <a
+				href="http://doc.akka.io/docs/akka/2.2.0-RC1/contrib/cluster-singleton.html#cluster-singleton"
+				target="_blank">Cluster Singleton</a>.
+		</p>
+		<p>
+			In depth documentation can be found in the <a
+				href="http://doc.akka.io/docs/akka/2.2.0-RC1/common/cluster.html"
+				target="_blank">Cluster Specification</a> and in the <a
+				href="http://doc.akka.io/docs/akka/2.2.0-RC1/scala/cluster-usage.html"
+				target="_blank">Cluster Usage</a> documentation.
+		</p>
+
+	</div>
+
+</body>
+</html>
