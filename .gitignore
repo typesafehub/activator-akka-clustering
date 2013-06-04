@@ -8,6 +8,9 @@
 */project/boot
 */project/build/target
 */project/project.target.config-classes
+project/activator-defaults-shim.sbt
+project/activator-eclipse-shim.sbt
+project/activator-idea-shim.sbt
 *~
 .#*
 .*.swp

@@ -1,0 +1,69 @@
+<html>
+<head>
+<title>Akka Cluster - Activator Template</title>
+</head>
+<body>
+	<div>
+		<h2>NOT READY - ONLY SOME NOTES</h2>
+
+		<p>
+		The design on Derek's http://letitcrash.com/post/29044669086/balancing-workload-across-nodes-with-akka-2
+        and adds how discovery and interaction can be done with cluster features.
+        </p>
+
+        <p><b>General requirements:</b></p>
+
+<ul>
+<li> elastic addition/removal of frontend nodes
+<li> elastic addition/removal of workers
+<li> support many workers (~10000)
+<li> work should not be lost, fail, or be aborted, when master node crashes
+</ul>
+
+<img src="workers-sketch.png" border="0"/>
+
+<p><b>Interactions:</b></p>
+
+<ul>
+<li> master actor is singleton within nodes with role "backend"
+<li> current active master actor runs on oldest node
+<li> in case of crash, standby node starts new master actor
+<li> master actor register itself in DistributedPubSubMediator
+</ul>
+<p>&nbsp;</p>
+<ul>
+<li> worker registers to master via cluster client, receptionist proxy
+<li> cluster client means that workers don't talk directly to master, and also don't have to know where the master is running
+<li> worker re-registers periodically, which is good for
+  startup ordering, master fail over, switching receptionist
+<li> ack not needed for register
+</ul>
+<p>&nbsp;</p>
+<ul>
+<li> client submits work to frontend through REST API
+<li> frontend sends work to master via DistributedPubSubMediator
+<li> master receives work, stores change in eventsourced, replies with ack
+<li> frontend retries until ack from master, thereafter OK to client
+<li> master notifies some idle workers that there exists available work
+<li> worker asks for work
+<li> master sends work to worker, and keeps track of that worker is busy
+<li> worker is expected to report progress, failure, or done
+<li> done require ack from master
+<li> if worker is silent (timeout) the work is considered failed, and is placed in queue again
+<li> master updates work status, as domain event in eventsourced
+<li> the eventsourced state of work status is used when master standby is started
+<li> work can start from one master and complete with another master instance
+<li> work status, progress, and result is also published to frontend read view
+</ul>
+
+<p><b>Possible Extensions:</b></p>
+
+<ul>
+<li>multiple masters, use several roles, one per shard, "backend-shard1", "backend-shard2"...
+everything else same as described above, frontend sends work to master via DistributedPubSubMediator.Send means that one work item is sent to only one master
+</ul>
+
+	</div>
+
+</body>
+</html>
