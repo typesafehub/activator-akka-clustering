@@ -35,7 +35,7 @@ class RandomUser extends Actor {
   override def postRestart(reason: Throwable): Unit = ()
 
   def receive = {
-    case Tick ⇒
+    case Tick =>
       scheduler.scheduleOnce(rnd.nextInt(5, 20).seconds, self, Tick)
       val msg = phrases(rnd.nextInt(phrases.size))
       client ! ChatClient.Publish(msg)

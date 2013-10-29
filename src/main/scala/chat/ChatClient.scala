@@ -20,10 +20,10 @@ class ChatClient(name: String) extends Actor {
   println(s"$name joined chat room")
 
   def receive = {
-    case ChatClient.Publish(msg) ⇒
+    case ChatClient.Publish(msg) =>
       mediator ! Publish(topic, ChatClient.Message(name, msg))
 
-    case ChatClient.Message(from, text) ⇒
+    case ChatClient.Message(from, text) =>
       val direction = if (sender == self) ">>>>" else s"<< $from:"
       println(s"$name $direction $text")
   }
