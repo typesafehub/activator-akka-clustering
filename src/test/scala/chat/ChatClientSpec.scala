@@ -1,7 +1,6 @@
 package chat
 
-import org.scalatest.{ BeforeAndAfterAll, FlatSpec }
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{ BeforeAndAfterAll, FlatSpecLike, Matchers }
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import akka.contrib.pattern.DistributedPubSubExtension
@@ -9,8 +8,8 @@ import akka.contrib.pattern.DistributedPubSubMediator.Subscribe
 
 class ChatClientSpec(_system: ActorSystem)
   extends TestKit(_system)
-  with ShouldMatchers
-  with FlatSpec
+  with Matchers
+  with FlatSpecLike
   with BeforeAndAfterAll {
 
   def this() = this(ActorSystem("ChatClientSpec"))
