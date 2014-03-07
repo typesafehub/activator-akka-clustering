@@ -2,10 +2,10 @@ name := "akka-clustering"
 
 version := "0.1"
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-contrib" % "2.2.1",
-  "com.typesafe.akka" %% "akka-testkit" % "2.2.1",
-  "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test")
+  "com.typesafe.akka" %% "akka-contrib" % "2.3.0",
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.0",
+  "org.scalatest" % "scalatest_2.10" % "2.0" % "test")
 
