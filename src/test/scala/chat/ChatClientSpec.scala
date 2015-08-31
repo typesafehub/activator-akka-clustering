@@ -3,8 +3,11 @@ package chat
 import org.scalatest.{ BeforeAndAfterAll, FlatSpecLike, Matchers }
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import akka.contrib.pattern.DistributedPubSubExtension
-import akka.contrib.pattern.DistributedPubSubMediator.Subscribe
+import akka.cluster.pubsub.DistributedPubSub
+import akka.cluster.pubsub.DistributedPubSubMediator.Subscribe
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class ChatClientSpec(_system: ActorSystem)
   extends TestKit(_system)
@@ -14,10 +17,10 @@ class ChatClientSpec(_system: ActorSystem)
 
   def this() = this(ActorSystem("ChatClientSpec"))
 
-  override def afterAll: Unit = system.shutdown()
+  override def afterAll: Unit = Await.ready(system.terminate(), Duration.Inf)
 
   "A ChatClient" should "publish messages to chatroom topic" in {
-    val mediator = DistributedPubSubExtension(system).mediator
+    val mediator = DistributedPubSub(system).mediator
     mediator ! Subscribe("chatroom", testActor)
     val chatClient = system.actorOf(ChatClient.props("user1"))
     chatClient ! ChatClient.Publish("hello")
