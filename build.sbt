@@ -4,7 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.11.7"
 
-lazy val akkaVersion = "2.4.0-RC1"
+lazy val akkaVersion = "2.4.0"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
