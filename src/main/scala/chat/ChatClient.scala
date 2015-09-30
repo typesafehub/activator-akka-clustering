@@ -2,9 +2,8 @@ package chat
 
 import akka.actor.Actor
 import akka.actor.Props
-import akka.contrib.pattern.DistributedPubSubExtension
-import akka.contrib.pattern.DistributedPubSubMediator.Publish
-import akka.contrib.pattern.DistributedPubSubMediator.Subscribe
+import akka.cluster.pubsub.DistributedPubSub
+import akka.cluster.pubsub.DistributedPubSubMediator.{Publish, Subscribe}
 
 object ChatClient {
   def props(name: String): Props = Props(classOf[ChatClient], name)
@@ -14,7 +13,7 @@ object ChatClient {
 }
 
 class ChatClient(name: String) extends Actor {
-  val mediator = DistributedPubSubExtension(context.system).mediator
+  val mediator = DistributedPubSub(context.system).mediator
   val topic = "chatroom"
   mediator ! Subscribe(topic, self)
   println(s"$name joined chat room")

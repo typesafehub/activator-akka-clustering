@@ -2,10 +2,13 @@ name := "akka-clustering"
 
 version := "0.1"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.7"
+
+lazy val akkaVersion = "2.4.0"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-contrib" % "2.3.4",
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.4",
-  "org.scalatest" % "scalatest_2.10" % "2.1.6" % "test")
+  "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
+  "org.scalatest" %% "scalatest" % "2.1.6" % "test")
 
